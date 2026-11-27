@@ -2,41 +2,33 @@
 
 ## Where we stopped
 - **Date:** 2026-11-27
-- **Branch:** `day1-content-search`
-- **Latest code commit:** `6ba9bd3` "day 1: content parser + keyword search (26/28, 2 known misses)". This note is committed right after it as "docs: day 1 handoff".
-- **`main`:** still at `9e14a06` "scaffold + spec + content + evals". Nothing merged.
-- **Pushed:** nothing. The remote `origin` is added but unused.
+- **Branch:** `day2-answer-step` (from `main` at `3896635`, the merge of PR #1). `day1-content-search` was deleted after its merge.
+- **Latest code commit:** `408861a` "day 2a: hard rules, answer logic, prompt (mocked AI)". This note is committed right after it.
+- **Pushed:** nothing.
+- **Real AI calls made:** none. Every test uses a fake AI.
 
 ## What works
-- Next.js app scaffolded. `npm run lint` passes. `npm run build` succeeded on 2026-11-27.
-- `lib/content.ts` reads the 25 help articles.
-- `lib/search.ts` returns up to 3 articles. For 26 of 28 answer cases an accepted article is in the top 3.
-- `npm test`: 43 passed, 2 expected failures (the known misses below).
+- `lib/rules.ts`: the 6 hard rules. Whole words and phrases, any letter case, word forms written out by hand (refund/refunded, hack/hacked …). C29–C34 each trigger exactly their rule; the other 36 cases trigger none.
+- `lib/prompt.ts`: the AI instructions, pinned by SHA-256 fingerprint `c9d2c5c5436d29eedb626330a5104aedcac197d20b98982b6d567cf9eaf3456e`. The question and articles go in `<question>` and `<article id="…">` blocks; `<` and `>` inside them are neutralised.
+- `lib/answer.ts`: the full order (validate → kill switch → hard rules → top 3 search → one AI call with 15 s limit → JSON check → language → off-topic → needs_human → source check → quote check).
+- `lib/ai-errors.ts`: a Groq 400 `json_validate_failed` becomes handover `ai_invalid_output`; every other error becomes "Demo busy, try later".
+- `lib/groq.ts`: the real call (plain fetch, `openai/gpt-oss-120b`, temperature 0, 500 output tokens, JSON format, `reasoning_effort: "low"`, `include_reasoning: false`). Not yet run.
+- `app/api/answer/route.ts`: `POST { question }`. Returns 400 for a rejected question, 200 otherwise. Logs nothing.
+- `npm test`: 246 passed, 2 expected failures (C16, C22 known search misses). `npm run lint`, `npx tsc --noEmit` and `npm run build` pass.
 
-## Known misses (accepted 2026-11-27, see `docs/DECISIONS.md`)
-| Case | Question | Wanted | Why it misses |
-|---|---|---|---|
-| C16 | Can I invoice in US dollars? | A16 | The article says "USD", never "dollar". A16 lands 5th. |
-| C22 | How do I get all my invoices out as a backup? | A20 | The article says "export", never "backup". A20 ranks last of 16 matches. |
-
-Both tests use `it.fails`, so the suite turns red if either one starts passing. First search run was 24 of 28; one general change (words of 6+ letters match on their first 6 letters) fixed C11 and C25.
-
-## How search scores (so counts can be checked by hand)
-- Lowercase, drop punctuation and stopwords, drop a final "s" on words longer than 3 letters, apply synonyms.
-- Words of 6+ letters also match each other if their first 6 letters are the same.
-- Each different question word: 2 points if in the title, plus 1 if in the body. Category is ignored.
-- Ties go to the lower article id. Articles scoring 0 are never returned.
-
-## What's next
-Day 2 from `docs/SPEC.md`: hard rules in code, `/api/answer`, JSON check, citation check (including the exact-quote check). Done when unit tests pass with a mocked AI and 3 real calls work locally. `lib/prompt.ts` needs its SHA-256 fingerprint test.
-
-## Watch on Day 2
-- C16 and C22 are expected to end in `needs_human`, but that is not yet tested. For C22 the search still passes A07 to the AI, and A07 mentions "Download PDF". The AI could answer from it, which would count as a wrong answer. Check both with real calls.
+## What's next: Day 2b (only after Chinmay approves the prompt text)
+1. Chinmay reads the full text in `lib/prompt.ts` and approves it, or asks for changes. Any change means a new fingerprint and a line in `docs/DECISIONS.md`.
+2. Then 3 real calls locally through `/api/answer`, for example C06 (answer), C35 (should be needs_human) and C39 (off-topic).
+3. Check during Day 2b:
+   - Do `reasoning_effort` and `include_reasoning` work as expected, and is 500 tokens enough?
+   - Does Groq really report bad JSON as 400 `json_validate_failed`?
+   - C16 and C22 should end as needs_human (see Day 1 watch note).
+   - C23 ("I forgot my password") must still be answered from A21.
 
 ## Open questions
-- **PRD Q1** (non-English questions: hand over, decline or answer?) is due 27 Nov, before Day 2.
 - **PRD Q3, Q4, Q5** (talk to 3 support people; check the numbers and price) due 2 Dec.
-- **PRD Q6** (Groq country and Zero Data Retention) due 2 Dec. **Q7** (Impressum) due 2 Dec. **Q8** (name clashes) due 1 Dec.
+- **PRD Q6** (Groq processing country) due 2 Dec. Zero Data Retention was turned on 2026-11-27. **Q7** (Impressum) due 2 Dec. **Q8** (name clashes) due 1 Dec.
 
 ## Later
 - Article keywords from real customer wording (vocabulary gap). Parked 2026-11-27: needs real search logs.
+- `content/help-center.md` is read at request time from the project folder. Check that it is included when deploying to Vercel (Day 6).
