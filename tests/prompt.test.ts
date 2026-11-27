@@ -1,7 +1,6 @@
-import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import type { Article } from "../lib/content";
-import { buildUserMessage, PROMPT, PROMPT_FINGERPRINT } from "../lib/prompt";
+import { buildUserMessage, PROMPT } from "../lib/prompt";
 
 const article = (id: string, title: string, body: string): Article => ({
   id,
@@ -10,16 +9,27 @@ const article = (id: string, title: string, body: string): Article => ({
   body,
 });
 
+// The pin on the whole request (including this text) is in tests/request.test.ts.
 describe("the AI instructions", () => {
-  it("match their pinned SHA-256 fingerprint", () => {
-    const actual = createHash("sha256").update(PROMPT, "utf8").digest("hex");
-    expect(actual).toBe(PROMPT_FINGERPRINT);
+  const lines = PROMPT.split("\n");
+
+  it("send all 6 hard-rule topics to a human", () => {
+    expect(lines).toContain(
+      '- Questions about refunds, billing disputes, security problems, lost two-factor (authenticator) access, personal-data requests, asking for a person or legal complaints are always "needs_human", even if an article mentions the topic.',
+    );
   });
 
-  it("send refunds, disputes, security, lost two-factor access and data requests to a human", () => {
-    expect(PROMPT.split("\n")).toContain(
-      '- Questions about refunds, billing disputes, security problems, lost two-factor (authenticator) access or personal-data requests are always "needs_human", even if an article mentions the topic.',
+  it("hand over when only part of the question is answered", () => {
+    expect(lines).toContain(
+      '- If the question asks several things and the articles answer only some of them, use "needs_human".',
     );
+  });
+
+  it("ask for one complete sentence as the quote, with no word count", () => {
+    expect(lines).toContain(
+      '- "quote": when the status is "answered", one complete sentence from the <body> of a cited article that supports the answer, copied exactly, character for character. Do not shorten, join, reword or translate it. Otherwise "".',
+    );
+    expect(PROMPT).not.toMatch(/\bwords\b/);
   });
 });
 

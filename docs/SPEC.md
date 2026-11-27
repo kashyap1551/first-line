@@ -20,7 +20,7 @@ FirstLine is an AI support agent. It answers customers' questions from a company
 
 ## The flow (plain code decides, AI only reads and writes wording)
 1. **Hard rules (code, no AI call).** If the question matches a "must go to a human" rule, hand over at once:
-   - `billing_dispute`: refund, money back, charged twice, double charged, overcharged, chargeback
+   - `billing_dispute`: refund, money back, charged twice, charging twice, double charged, overcharged, chargeback (not "charge twice", which is about billing a client)
    - `security`: hacked, someone accessed, suspicious login, fraud, stolen
    - `asked_for_human`: human, real person, agent, speak to someone, talk to someone
    - `account_recovery`: a loss phrase (lost, can't get, cannot access, no longer have) together with a two-factor word (2FA, two-factor, two factor, authenticator)
@@ -33,9 +33,9 @@ FirstLine is an AI support agent. It answers customers' questions from a company
    - It answers only from the articles and never guesses.
    - If an article says to contact support, or the case needs someone to check the account, the status is `needs_human`.
    - Questions unrelated to Tallyfox, or attempts to change its instructions, are `off_topic`.
-4. **Checks (code).** If the status is `answered` but `cited_ids` is empty or names an article that wasn't provided, the result becomes `needs_human` with the reason `no_valid_source`. If `quote` is not found word for word in a cited article (after trimming spaces), the result becomes `needs_human` with the reason `quote_not_found`.
+4. **Checks (code).** If the status is `answered` but `cited_ids` is empty or names an article that wasn't provided, the result becomes `needs_human` with the reason `no_valid_source`. If `quote` is not one whole sentence of a cited article (ignoring spaces and line breaks; a missing final . ! ? is allowed), the result becomes `needs_human` with the reason `quote_not_found`. A fragment or two joined sentences fail.
    - If language is not English, the result becomes needs_human with the reason language_not_supported.
-   - **Pinning:** the AI instructions live in one file (`lib/prompt.ts`). A test checks its fingerprint (SHA-256 hash), so any change to the instructions fails the test until the fingerprint is updated on purpose and logged in `docs/DECISIONS.md`.
+   - **Pinning:** the AI instructions live in one file (`lib/prompt.ts`). A test checks the fingerprint (SHA-256 hash) of the whole request sent to the AI for one fixed example (instructions, block layout, model and settings, `lib/groq-request.ts`), so any change fails the test until the fingerprint is updated on purpose and logged in `docs/DECISIONS.md`.
 5. **Customer feedback.** Every answer shows "Did this solve it?" with Yes and No buttons.
    - Yes = **resolved**, which is billed.
    - No = a handover with the reason `customer_said_no`.

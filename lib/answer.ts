@@ -1,7 +1,8 @@
 import { z } from "zod";
-import { AiInvalidOutputError } from "./ai-errors";
+import { AiInvalidOutputError, failureFacts, type AiFailure } from "./ai-errors";
 import type { Article } from "./content";
 import { buildUserMessage, PROMPT } from "./prompt";
+import { isWholeSentence } from "./quote";
 import { matchRule } from "./rules";
 import { search } from "./search";
 
@@ -57,10 +58,10 @@ const AiReplySchema = z
   })
   .refine((r) => r.status !== "answered" || r.answer.trim() !== "");
 
-// Differences in spaces and line breaks are ignored; every other character counts.
-const squash = (text: string) => text.replace(/\s+/g, " ").trim();
-
 const TIMED_OUT = Symbol("timed out");
+
+// Only the error type and HTTP status. Never the question, the reply or a key.
+const logFailure = (facts: AiFailure) => console.error("ai_call_failed", facts);
 
 /** Sends the request, but gives up and cancels it after AI_TIMEOUT_MS. */
 async function callWithTimeout(
@@ -126,12 +127,15 @@ export async function answerQuestion(
       buildUserMessage(question, given),
     );
   } catch (error) {
+    const facts = failureFacts(error);
+    logFailure(facts);
     if (error instanceof AiInvalidOutputError) {
       return handover("ai_invalid_output");
     }
-    text = TIMED_OUT;
+    return { outcome: "unavailable", message: "Demo busy, try later" };
   }
   if (text === TIMED_OUT) {
+    logFailure({ type: "timeout" });
     return { outcome: "unavailable", message: "Demo busy, try later" };
   }
 
@@ -167,12 +171,9 @@ export async function answerQuestion(
   ) {
     return handover("no_valid_source");
   }
-  const quote = squash(ai.quote);
-  const quoteFound =
-    quote !== "" &&
-    given.some(
-      (a) => ai.cited_ids.includes(a.id) && squash(a.body).includes(quote),
-    );
+  const quoteFound = given.some(
+    (a) => ai.cited_ids.includes(a.id) && isWholeSentence(ai.quote, a.body),
+  );
   if (!quoteFound) return handover("quote_not_found");
 
   return {

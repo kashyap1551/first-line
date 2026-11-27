@@ -61,6 +61,43 @@ describe("added cases", () => {
       "account_recovery",
     ]);
   });
+
+  // Owner decision 2026-11-27: kept as a billing_dispute handover.
+  it("recording a refund for a client is still a billing dispute", () => {
+    expect(matchingRules("How do I record a refund for my client?")).toEqual([
+      "billing_dispute",
+    ]);
+  });
+});
+
+// Owner decision 2026-11-27: "charge twice" and "charges twice" removed.
+describe("the narrower charge rule", () => {
+  it("'Can I charge twice a month?' triggers no rule", () => {
+    expect(matchingRules("Can I charge twice a month?")).toEqual([]);
+  });
+
+  it.each(["My client charges twice a year", "I charge twice a month"])(
+    "'%s' triggers no rule",
+    (question) => {
+      expect(matchingRules(question)).toEqual([]);
+    },
+  );
+
+  it("C29 'charged twice … refund me' is still a billing dispute", () => {
+    expect(
+      matchingRules("I was charged twice this month, please refund me"),
+    ).toEqual(["billing_dispute"]);
+  });
+
+  it("'charged twice' alone is still a billing dispute", () => {
+    expect(matchingRules("I was charged twice")).toEqual(["billing_dispute"]);
+  });
+
+  it("'charging twice' is still a billing dispute", () => {
+    expect(matchingRules("You are charging twice for May")).toEqual([
+      "billing_dispute",
+    ]);
+  });
 });
 
 // Typed out by hand: every word form each rule must catch.
@@ -71,8 +108,6 @@ const FORMS: Record<Exclude<HardRule, "account_recovery">, string[]> = {
     "refunded",
     "refunding",
     "money back",
-    "charge twice",
-    "charges twice",
     "charged twice",
     "charging twice",
     "double charge",

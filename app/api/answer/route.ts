@@ -1,16 +1,9 @@
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import { answerQuestion } from "@/lib/answer";
-import { parseArticles, type Article } from "@/lib/content";
 import { callGroq } from "@/lib/groq";
+import { articles } from "@/lib/help-centre";
 
-// Nothing here logs the question, the AI reply or any key.
-
-let articles: Article[] | undefined;
-const helpCentre = () =>
-  (articles ??= parseArticles(
-    readFileSync(join(process.cwd(), "content", "help-center.md"), "utf8"),
-  ));
+// The only log line is in lib/answer.ts: the error type and HTTP status of a
+// failed AI call. Never the question, the AI reply or any key.
 
 export async function POST(request: Request) {
   let question: unknown;
@@ -26,7 +19,7 @@ export async function POST(request: Request) {
 
   const result = await answerQuestion(question, {
     callAi: callGroq,
-    articles: helpCentre(),
+    articles,
     aiEnabled: process.env.AI_ENABLED,
   });
   return Response.json(result, {

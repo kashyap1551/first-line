@@ -41,7 +41,8 @@ const RULES: { rule: HardRule; test: (question: string) => boolean }[] = [
       anyOf(
         "refund(?:s|ed|ing)?",
         `money${_}back`,
-        `charg(?:e|es|ed|ing)${_}twice`,
+        // Not "charge twice": "Can I charge twice a month?" is about billing a client.
+        `charg(?:ed|ing)${_}twice`,
         `double${_}charg(?:e|es|ed|ing)`,
         "overcharg(?:e|es|ed|ing)",
         "chargebacks?",

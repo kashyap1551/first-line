@@ -1,18 +1,22 @@
 import { readFileSync } from "node:fs";
-import { afterEach, describe, expect, it, vi } from "vitest";
-import { AiInvalidOutputError } from "../lib/ai-errors";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+  type MockInstance,
+} from "vitest";
+import { AiInvalidOutputError, groqError } from "../lib/ai-errors";
 import { answerQuestion, type CallAi } from "../lib/answer";
-import { parseArticles } from "../lib/content";
+import { articles } from "../lib/help-centre";
 import { PROMPT } from "../lib/prompt";
 
 // Every AI here is a fake. Nothing in this file touches the network.
 
-const read = (path: string) =>
-  readFileSync(new URL(path, import.meta.url), "utf8");
-
-const articles = parseArticles(read("../content/help-center.md"));
 const cases: { id: string; question: string }[] = JSON.parse(
-  read("../evals/cases.json"),
+  readFileSync(new URL("../evals/cases.json", import.meta.url), "utf8"),
 ).cases;
 const question = (id: string) => cases.find((c) => c.id === id)!.question;
 
@@ -57,8 +61,15 @@ const answered = (quote: string = QUOTE) => ({
   quote,
 });
 
+// Failed AI calls log a line; catch it so tests can check it and stay quiet.
+let errorLog: MockInstance<typeof console.error>;
+beforeEach(() => {
+  errorLog = vi.spyOn(console, "error").mockImplementation(() => {});
+});
+
 afterEach(() => {
   vi.useRealTimers();
+  vi.restoreAllMocks();
 });
 
 describe("before any AI call", () => {
@@ -114,6 +125,13 @@ describe("before any AI call", () => {
       aiEnabled: undefined,
     });
     expect(result.outcome).toBe("paused");
+    expect(ai).toHaveBeenCalledTimes(0);
+  });
+
+  it("recording a refund for a client → billing_dispute, 0 AI calls", async () => {
+    const ai = fakeAi();
+    const q = "How do I record a refund for my client?";
+    expect(await ask(q, ai)).toEqual(handover("billing_dispute", q));
     expect(ai).toHaveBeenCalledTimes(0);
   });
 
@@ -201,6 +219,27 @@ describe("quote check", () => {
     expect(ai).toHaveBeenCalledTimes(1);
   });
 
+  it.each([
+    "your account moves to the Free plan.",
+    "Go to Settings → Billing → Cancel plan. You keep your paid features until the end of the current billing period, and then your account moves to the Free plan.",
+  ])("a fragment or two joined A06 sentences → quote_not_found: %s", async (quote) => {
+    const ai = fakeAi(reply({ quote }));
+    expect(await ask(C06, ai)).toEqual(handover("quote_not_found", C06));
+    expect(ai).toHaveBeenCalledTimes(1);
+  });
+
+  it.each(["PayPal is not accepted.", "PayPal is not accepted"])(
+    "the whole short A04 sentence, cited A04, is answered: %s",
+    async (quote) => {
+      const ai = fakeAi(reply({ cited_ids: ["A04"], quote }));
+      expect(await ask(C06, ai)).toEqual({
+        ...answered(quote),
+        cited_ids: ["A04"],
+      });
+      expect(ai).toHaveBeenCalledTimes(1);
+    },
+  );
+
   it("quote matching except extra spaces and line breaks is answered", async () => {
     const spaced = `  You keep   your paid features until the end of the\ncurrent billing period,\r\n and then your account moves to the Free plan. `;
     const ai = fakeAi(reply({ quote: spaced }));
@@ -222,6 +261,16 @@ describe("the AI's own verdict", () => {
   it("needs_human with an empty summary uses the question", async () => {
     const ai = fakeAi(reply({ status: "needs_human", handover_summary: " " }));
     expect(await ask(C06, ai)).toEqual(handover("ai_unsure", C06));
+    expect(ai).toHaveBeenCalledTimes(1);
+  });
+
+  it("'Can I charge twice a month?' reaches the AI; needs_human → ai_unsure, 1 AI call", async () => {
+    const q = "Can I charge twice a month?";
+    const summary = "Customer asks whether invoices can be sent twice a month.";
+    const ai = fakeAi(
+      reply({ status: "needs_human", handover_summary: summary }),
+    );
+    expect(await ask(q, ai)).toEqual(handover("ai_unsure", summary));
     expect(ai).toHaveBeenCalledTimes(1);
   });
 
@@ -295,5 +344,67 @@ describe("AI failures → unavailable", () => {
     expect(result).toEqual(busy);
     expect(ai.mock.calls[0][0].signal.aborted).toBe(true);
     expect(ai).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("safe error logging", () => {
+  const SECRET = "SECRET-REPLY-TEXT";
+  const failWith = (error: unknown) =>
+    vi.fn<CallAi>(async () => {
+      throw error;
+    });
+
+  it.each([
+    {
+      name: "a Groq 429",
+      error: groqError(429, { error: { code: "rate_limit_exceeded" } }),
+      logged: { type: "rate_limit", status: 429 },
+    },
+    {
+      name: "a Groq 500",
+      error: groqError(500, { error: { code: "internal_error" } }),
+      logged: { type: "http_error", status: 500 },
+    },
+    {
+      name: "Groq rejecting invalid JSON",
+      error: groqError(400, { error: { code: "json_validate_failed" } }),
+      logged: { type: "invalid_output", status: 400 },
+    },
+    {
+      name: "an error with no status (network, missing key)",
+      error: new Error("fetch failed"),
+      logged: { type: "error" },
+    },
+  ])("$name logs only the type and status", async ({ error, logged }) => {
+    await ask(C06, failWith(error));
+    expect(errorLog).toHaveBeenCalledTimes(1);
+    expect(errorLog.mock.calls[0]).toEqual(["ai_call_failed", logged]);
+  });
+
+  it("a timeout logs only the type", async () => {
+    vi.useFakeTimers();
+    const pending = ask(C06, vi.fn<CallAi>(() => new Promise<string>(() => {})));
+    await vi.advanceTimersByTimeAsync(15_000);
+    await pending;
+    expect(errorLog.mock.calls).toEqual([["ai_call_failed", { type: "timeout" }]]);
+  });
+
+  it("never logs the question or the AI reply, even if the error carries them", async () => {
+    const leaky = Object.assign(new Error(`${C06} ${SECRET}`), {
+      status: 429,
+      body: SECRET,
+      question: C06,
+    });
+    await ask(C06, failWith(leaky));
+    const logged = JSON.stringify(errorLog.mock.calls);
+    expect(logged).not.toContain(SECRET);
+    expect(logged).not.toContain(C06);
+    expect(logged).not.toContain("subscription");
+  });
+
+  it("logs nothing when the AI call works", async () => {
+    await ask(C06, fakeAi());
+    await ask(C06, fakeAi("not json"));
+    expect(errorLog).not.toHaveBeenCalled();
   });
 });

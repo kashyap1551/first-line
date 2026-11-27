@@ -12,3 +12,11 @@
 - 2026-11-27: AI failures (error, timeout, rate limit) show "Demo busy, try later", with no automatic retries and no billing.
 - 2026-11-27: Hard rule account_recovery = a loss phrase ("lost", "can't get", "cannot access", "no longer have") plus a two-factor word (2FA, two-factor, two factor, authenticator). The word "code" is not required.
 - 2026-11-27: Mixed-language questions: code uses the language the AI reports. If it isn't "en", the question is handed to a human.
+- 2026-11-27: Quote must equal one whole sentence of a cited article (not a word minimum): a 5-word minimum would reject A04's 'PayPal is not accepted.', the best evidence for C03. Sentences split after . ! ? followed by a space, a line break or the end ("1.5%", "€0.25", "invoices@tallyfox.example" stay whole). Spaces and line breaks are ignored; a missing final . ! ? is allowed.
+- 2026-11-27: AI instructions changed before any real call (owner approved): the always-needs_human line now covers all 6 hard-rule topics (adds asking for a person and legal complaints); added "If the question asks several things and the articles answer only some of them, use needs_human"; the quote line now asks for one complete sentence. Old text fingerprint c9d2c5c5… retired.
+- 2026-11-27: The pin is now a request fingerprint: SHA-256 of the full Groq request body for one fixed example (model, messages with instruction text and block layout, response format, temperature, max tokens, seed, reasoning settings). Value b6cbcebee5df9b5846fc85e02423ecdc0c46b42ae5e23b47f68e4a6f8fd0c2e0.
+- 2026-11-27: Fixed seed 20261127 added for repeatable eval runs (Groq treats seed as best effort).
+- 2026-11-27: billing_dispute narrowed: "charge twice" and "charges twice" removed ("Can I charge twice a month?" is about billing a client). Kept: "charged twice", "charging twice", "double charge/charged/charging", "overcharge/overcharged/overcharging", refund forms, money back, chargeback(s).
+- 2026-11-27: "How do I record a refund for my client?" stays a billing_dispute handover (owner accepted).
+- 2026-11-27: The server logs only the error type and HTTP status of a failed AI call. Never the question, the AI reply or a key.
+- 2026-11-27: The help centre is built into the code at build time (Turbopack "?raw" text rule, no new package), so a deployment can't miss content/help-center.md.

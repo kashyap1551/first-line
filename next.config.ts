@@ -10,6 +10,8 @@ const nextConfig: NextConfig = {
         loaders: ["@tailwindcss/turbopack"],
         as: "*.css",
       },
+      // "file.md?raw" is loaded as text at build time (lib/help-centre.ts).
+      "*.md": { condition: { query: "?raw" }, type: "text" },
     },
   },
 };
