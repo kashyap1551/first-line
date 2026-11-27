@@ -1,10 +1,16 @@
 # Handoff
 
+## Start here next session
+1. Read CLAUDE.md, then this file, then docs/DECISIONS.md.
+2. Chinmay's manual steps before any real AI call: (a) Groq console: set the first-line project's limits below the organisation limits; (b) approve the AI instruction text and request body (fingerprint b6cbcebee5df9b5846fc85e02423ecdc0c46b42ae5e23b47f68e4a6f8fd0c2e0) in his reviewer chat.
+3. Then Day 2b: first check that `npm run dev` works with the ?raw help-centre loading, then 3 real calls (C06, C35, C39) and the Day 2b checks listed below.
+Branch day2-answer-step is pushed but NOT merged; it merges to main via a pull request only after Day 2b passes and Chinmay says go.
+
 ## Where we stopped
 - **Date:** 2026-11-27
 - **Branch:** `day2-answer-step` (from `main` at `3896635`, the merge of PR #1).
-- **Latest code commit:** `00c77a4` "day 2a.1: review fixes (whole-sentence quote, request fingerprint, narrower charge rule)". This note is committed right after it.
-- **Pushed:** nothing.
+- **Latest code commit:** `00c77a4` "day 2a.1: review fixes (whole-sentence quote, request fingerprint, narrower charge rule)". Then `085443b` "docs: day 2a.1 handoff" and "docs: end-of-day handoff (27 Nov)" (this note).
+- **Pushed:** `day2-answer-step` pushed to origin on 2026-11-27 and tracking `origin/day2-answer-step`. NOT merged. `main` was not pushed or changed (still `3896635`).
 - **Real AI calls made:** none. Every test uses a fake AI.
 
 ## What works
