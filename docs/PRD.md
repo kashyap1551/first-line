@@ -55,7 +55,7 @@ It's Monday, 9:00. Lena is the only support person at a 20-person software compa
 - **Companies without written help articles.** There's nothing to answer from.
 - **Regulated support** such as health, banking or insurance. A wrong answer costs too much.
 - **Phone and email support.**
-- **Non-English questions.** The policy is still open; see Q1.
+- **Non-English questions.** Decided 2026-11-27 (Q1): they are handed to a human.
 
 ---
 
@@ -103,14 +103,14 @@ After using FirstLine, a support lead can let AI answer the repeat questions the
 ### 4.3 Later list (parked 26 Nov 2026)
 - n8n handover to Slack or email with "send and wait for response". Parked because it's not needed for the core promise.
 - Per-IP rate limits using a small store. Parked because a per-browser cap plus the free-tier ceiling is enough for a demo.
-- German and mixed-language questions. Parked until Q1 is decided.
+- Answering German and mixed-language questions. Parked. Q1 was decided on 2026-11-27: non-English questions are handed to a human.
 - Upload-your-own-docs. Parked until the privacy page and upload rules exist.
 - A comparison with per-seat pricing on the billing page. Parked as a nice-to-have.
 
 ### 4.4 Open questions
 | # | Question | Owner | Decide by |
 |---|---|---|---|
-| Q1 | Non-English questions: hand over, decline, or try to answer? | Chinmay | 27 Nov (before Day 2) |
+| Q1 | ~~Non-English questions: hand over, decline, or try to answer?~~ **Decided 27 Nov 2026:** hand over to a human (reason `language_not_supported`). The AI reports the question's language; code decides. | Chinmay | Done |
 | Q2 | ~~Is "resolved = customer clicked Yes" the definition?~~ **Decided 26 Nov:** yes. Silent chats are shown as "unverified" and never billed. | Chinmay | Done |
 | Q3 | Who are 3 people who do support at a small software company that I can ask this week? | Chinmay | 2 Dec |
 | Q4 | Are the moment's numbers (40 chats, half repeats, 3–5 min each) close to reality? | Chinmay, from Q3 | 2 Dec |
@@ -123,5 +123,5 @@ After using FirstLine, a support lead can let AI answer the repeat questions the
 1. **Evidence check.** The AI must also return one exact supporting line, and code checks it appears word for word in the cited article. If it doesn't, the question goes to a human with the reason `quote_not_found`.
 2. **Pinning.** A fingerprint (hash) of the AI instructions is stored, and a test fails if the instructions change without the fingerprint being updated on purpose.
 3. **Eval runs.** One calibration run first (practice, not counted), then two counted runs on different days with identical settings.
-4. **Hard cases.** Add test cases for very short input, very long input, messy formatting, a German question, a mixed-language question and a hidden-instruction trap. Their expected results depend on Q1.
+4. **Hard cases.** Add test cases for very short input, very long input, messy formatting, a German question, a mixed-language question and a hidden-instruction trap. Their expected results depend on Q1, decided on 2026-11-27: non-English questions are handed to a human.
 5. **Unsure items.** Mark C18 (VAT rate) and C35 (editing a past receipt) as "unsure" and score them separately.
