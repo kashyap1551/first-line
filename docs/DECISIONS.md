@@ -26,3 +26,11 @@
 - 2026-11-28: C23's answer added an unsupported detail ("sent to your email") while its quote was valid. Instructions not changed; the eval's hand scoring will count unsupported details across all cases before any prompt change.
 - 2026-11-28: The AI is still called when search finds no articles: only the AI can tell off-topic, non-English and needs-a-human apart (about 640 tokens per call).
 - 2026-11-28: Measured cost: about 700–1,050 tokens per question; a full eval run (about 36 AI calls) fits about 2 times in the 100,000 tokens/day project limit.
+- 2026-11-28: Customer wording in the /demo widget approved by Chinmay. It is pinned word for word in `tests/chat-messages.test.ts`:
+  - answered: the answer, then "From the help centre:" with the quote in a quote block and the cited article title(s), then "Did this solve it?" [Yes] [No]. After Yes: "Great, glad that helped." After No: "Sorry about that. I've passed your question to the Tallyfox team. They reply Monday to Friday, 9:00–17:00 CET, within 1 business day."
+  - handover (every reason except language_not_supported): "I've passed your question to the Tallyfox team. They reply Monday to Friday, 9:00–17:00 CET, within 1 business day."
+  - handover language_not_supported: "I can only answer in English for now. I've passed your question to the Tallyfox team."
+  - declined: "I can only help with questions about Tallyfox." unavailable: "The demo is busy right now. Please try again in a minute." paused: "The demo is paused right now." rejected: "Please type a question of up to 500 characters."
+  - daily cap reached: "You've reached today's limit of 20 demo questions. Come back tomorrow."
+- 2026-11-28: Daily cap: 20 questions per browser per local date, counting every question sent, whatever the outcome (rejected, paused and unavailable included). At 20 the input is disabled. It is kept in the browser (localStorage), so it is a soft cap: "Clear demo data", a private window or another browser starts again from 20.
+- 2026-11-28: "Demo notes": a small grey line under every bot reply tells visitors in plain words what the system decided behind the scenes (e.g. a hard rule with no AI used, the quote check, off-topic, non-English). Every outcome and every handover reason has its own note (tested).
