@@ -48,3 +48,7 @@
 - 2026-11-28: The eval stops at the first unavailable result, paused result or HTTP error (including a 400 json_validate_failed), with no retry, and writes the partial results marked INCOMPLETE.
 - 2026-11-28: At most one counted eval run per local date: the runner refuses a second counted run when a counted report for the same date already exists in the output folder.
 - 2026-11-28: Search check for the new hard cases (reported, not tuned): C45's accepted article A04 is in the top 3; C44's accepted article A01 is not (top 3: A12, A17, A07).
+- 2026-11-28 (owner decision): Confirmed: unsure cases are left out of the core bars and the bar numbers stay unchanged. At least 24 of 27 is stricter than the SPEC's 24 of 28, so it is allowed.
+- 2026-11-28 (owner decision): Confirmed: the "missed" verdict (a wrong outcome that is not a wrong answer).
+- 2026-11-28 (owner decision): A 400 json_validate_failed does NOT stop an eval run. It is scored the way the product behaves: a handover with the reason ai_invalid_output. Only an unavailable result (from a 429, a 5xx, a timeout or a network error) stops the run. Replaces the earlier "stops at any HTTP error" line.
+- 2026-11-28 (owner decision): Confirmed: the broader leak check (answer, quote and handover summary) and the --out option.

@@ -70,7 +70,12 @@ function fakeAi(failOn?: { question: string; status: number; invalidJson?: boole
     const question = /<question>\n([\s\S]*?)\n<\/question>/.exec(user)![1];
     seen.push(question);
     if (failOn && question === failOn.question) {
-      facts.push({ httpStatus: failOn.status });
+      // Like the real fetch wrapper: Groq's error code comes from the reply body.
+      facts.push(
+        failOn.invalidJson
+          ? { httpStatus: failOn.status, errorCode: "json_validate_failed" }
+          : { httpStatus: failOn.status },
+      );
       throw failOn.invalidJson ? new AiInvalidOutputError() : new AiHttpError(failOn.status);
     }
     facts.push(OK);
@@ -193,12 +198,52 @@ describe("dry run with a fake AI", () => {
     expect(md.split("\n").find((l) => l.startsWith("| C48 |"))).toContain("| not run |");
   });
 
-  it("also stops on any other HTTP error, e.g. a 400 json_validate_failed", async () => {
+  // Owner decision 2026-11-28: scored the way the product behaves, not a stop.
+  it("a 400 json_validate_failed does not stop: scored as handover ai_invalid_output", async () => {
     const ai = fakeAi({ question: FIXTURE[0].question, status: 400, invalidJson: true });
+    const { runs, stop } = await run(ai);
+    expect(stop).toBeNull();
+    expect(ai.seen).toHaveLength(3); // C03, C39, C48 all sent
+    expect(runs.map((r) => r.id)).toEqual(["C03", "C29", "C39", "C48"]);
+    expect(runs[0].result).toEqual({
+      outcome: "handover",
+      reason: "ai_invalid_output",
+      summary: FIXTURE[0].question,
+    });
+
+    const report = buildReport(META, FIXTURE, runs, stop, PROMPT);
+    expect(report.status).toBe("COMPLETE");
+    expect(report.rows[0].verdict).toBe("unneeded_handover");
+    expect(report.usage.jsonValidateFailed).toBe(1);
+    expect(renderMarkdown(report)).toContain("- json_validate_failed seen: yes (1)");
+  });
+
+  it.each([500, 503])("stops after a %i (server error)", async (status) => {
+    const ai = fakeAi({ question: FIXTURE[0].question, status });
     const { runs, stop } = await run(ai);
     expect(ai.seen).toHaveLength(1);
     expect(runs).toHaveLength(1);
-    expect(stop).toEqual({ id: "C03", why: "HTTP 400" });
+    expect(stop).toEqual({ id: "C03", why: `unavailable (HTTP ${status})` });
+  });
+
+  it("stops after a timeout or network error (no HTTP status at all)", async () => {
+    const ai = fakeAi();
+    const callAi: CallAi = async (request) => {
+      if (request.user.includes(FIXTURE[2].question)) throw new TypeError("fetch failed");
+      return ai.callAi(request);
+    };
+    const { runs, stop } = await runCases({
+      cases: FIXTURE,
+      articles,
+      callAi,
+      takeFacts: ai.takeFacts,
+      aiEnabled: "true",
+      sleep: async () => {},
+      waitMs: 20_000,
+      log: () => {},
+    });
+    expect(runs.map((r) => r.id)).toEqual(["C03", "C29", "C39"]);
+    expect(stop).toEqual({ id: "C39", why: "unavailable" });
   });
 
   it("stops at once if the AI is switched off (paused)", async () => {

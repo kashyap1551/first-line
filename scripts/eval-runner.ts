@@ -32,8 +32,8 @@ export type RunDeps = {
 
 /**
  * Runs every case through the real answer step, in order. Waits before each AI
- * call (hard-rule cases need none). Stops at the first unavailable result,
- * paused result or HTTP error: no retries.
+ * call (hard-rule cases need none). Stops at the first unavailable result
+ * (429, 5xx, timeout, network error) or paused result: no retries.
  */
 export async function runCases(deps: RunDeps): Promise<{ runs: CaseRun[]; stop: Stop }> {
   const runs: CaseRun[] = [];
@@ -58,11 +58,14 @@ export async function runCases(deps: RunDeps): Promise<{ runs: CaseRun[]; stop: 
           : "";
     deps.log(`[${i + 1}/${deps.cases.length}] ${c.id} ${result.outcome} ${detail} (${seconds.toFixed(1)} s)`);
 
-    const failed = calls.find((call) => call.httpStatus !== 200);
+    // Only "unavailable" (429, 5xx, timeout, network error) stops the run. A 400
+    // json_validate_failed is scored as the product behaves: handover
+    // ai_invalid_output (owner decision 2026-11-28).
     if (result.outcome === "unavailable") {
+      const failed = calls.find((call) => call.httpStatus !== 200);
       return { runs, stop: { id: c.id, why: failed ? `unavailable (HTTP ${failed.httpStatus})` : "unavailable" } };
     }
-    if (failed) return { runs, stop: { id: c.id, why: `HTTP ${failed.httpStatus}` } };
+    // Paused means the AI is switched off: no call can happen, so stop at once.
     if (result.outcome === "paused") return { runs, stop: { id: c.id, why: "paused" } };
   }
   return { runs, stop: null };

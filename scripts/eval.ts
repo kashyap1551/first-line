@@ -3,7 +3,7 @@
 //   npm run eval -- --label calibration
 //   npm run eval -- --label counted-1 [--cases /path/held-out.json] [--out /path/folder]
 //
-// Waits 20 s before each AI call, stops at the first error (no retries) and
+// Waits 20 s before each AI call, stops when the AI is unavailable (no retries) and
 // writes <out>/<date>-<label>.md and .json. Never prints or writes the key.
 
 import { execSync } from "node:child_process";

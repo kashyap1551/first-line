@@ -70,4 +70,5 @@
 ## Later
 - Article keywords from real customer wording (vocabulary gap). Parked 2026-11-27: needs real search logs.
 - Handover summary for language_not_supported: show the AI's English summary plus the original question (when building the inbox).
+- C44: long questions dilute keyword search (A01 mentions logo but scores below A12/A17/A07). Second search weakness after the vocabulary gap.
 - A question is recorded (and counted toward the cap) when its reply arrives. If the tab is closed while waiting, that question is not counted.
