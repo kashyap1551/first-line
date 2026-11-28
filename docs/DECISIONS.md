@@ -22,3 +22,7 @@
 - 2026-11-27: The help centre is built into the code at build time (Turbopack "?raw" text rule, no new package), so a deployment can't miss content/help-center.md.
 - 2026-11-28: AI instruction text (`lib/prompt.ts`) and request body (`lib/groq-request.ts`) approved by Chinmay. Fingerprint b6cbcebee5df9b5846fc85e02423ecdc0c46b42ae5e23b47f68e4a6f8fd0c2e0.
 - 2026-11-28: Groq "first-line" project: only `openai/gpt-oss-120b` is allowed. Project limits (project / organisation): 10 / 30 requests per minute, 300 / 1,000 requests per day, 4,000 / 8,000 tokens per minute, 100,000 / 200,000 tokens per day. Consequence: about 2 questions per minute; eval runs must pace their calls (Day 5).
+- 2026-11-28: Real calls: 9/9 matched, 0 wrong answers (docs/runs/2026-11-28-day2b.md).
+- 2026-11-28: C23's answer added an unsupported detail ("sent to your email") while its quote was valid. Instructions not changed; the eval's hand scoring will count unsupported details across all cases before any prompt change.
+- 2026-11-28: The AI is still called when search finds no articles: only the AI can tell off-topic, non-English and needs-a-human apart (about 640 tokens per call).
+- 2026-11-28: Measured cost: about 700–1,050 tokens per question; a full eval run (about 36 AI calls) fits about 2 times in the 100,000 tokens/day project limit.

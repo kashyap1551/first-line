@@ -2,14 +2,14 @@
 
 ## Start here next session
 1. Read CLAUDE.md, then this file, then docs/DECISIONS.md.
-2. Chinmay's manual steps before any real AI call: (a) Groq console: set the first-line project's limits below the organisation limits; (b) approve the AI instruction text and request body (fingerprint b6cbcebee5df9b5846fc85e02423ecdc0c46b42ae5e23b47f68e4a6f8fd0c2e0) in his reviewer chat.
-3. Then Day 2b: first check that `npm run dev` works with the ?raw help-centre loading, then 3 real calls (C06, C35, C39) and the Day 2b checks listed below.
-Branch day2-answer-step is pushed but NOT merged; it merges to main via a pull request only after Day 2b passes and Chinmay says go.
+2. The answer step (Day 2) is complete. Groq limits were set and the instructions approved on 28 Nov, then 8 real calls were made with 0 wrong answers (`docs/runs/2026-11-28-day2b.md`).
+3. Next: Day 3, the `/demo` chat widget with Yes/No feedback, showing the quote under every answer (SPEC screen 2). See "What's next" below.
+Branch day2-answer-step is pushed but NOT merged; it merges to main via a pull request only when Chinmay says go.
 
 ## Where we stopped
 - **Date:** 2026-11-28
 - **Branch:** `day2-answer-step` (from `main` at `3896635`, the merge of PR #1).
-- **Commits today:** `d3c8643` "chore: add Next.js AGENTS.md (written by next dev)", then "day 2b: first real calls (results in docs/runs)" (this note). Not pushed today: origin still has `77f3714`. NOT merged. `main` unchanged (`3896635`).
+- **Commits today:** `d3c8643` "chore: add Next.js AGENTS.md (written by next dev)", `f9b6dc6` "day 2b: first real calls (results in docs/runs)", then "docs: answer step complete" (this note). Pushed to origin on 2026-11-28 with Chinmay's go. NOT merged. `main` unchanged (`3896635`).
 - **Before the calls:** Chinmay set the Groq project limits and approved the instruction text and request body (both logged in `docs/DECISIONS.md`, 2026-11-28). Fingerprint unchanged.
 - **Real AI calls made:** 8 (budget 8): C06 through the real route (`npm run dev` + `POST /api/answer`), then C35, C39, C03, C23, C16, C22 and one German question through `scripts/try-real-calls.ts`. C29 made 0 calls (hard rule). All 9 results matched what was expected; 0 wrong answers. Full table: `docs/runs/2026-11-28-day2b.md`.
 - **How to run the script (no new packages):** `node --env-file=.env.local -e "import('vite').then(v => v.runnerImport('./scripts/try-real-calls.ts', { configFile: false }))"`. It makes up to 7 real calls and waits 35 s before each.
@@ -24,10 +24,12 @@ Branch day2-answer-step is pushed but NOT merged; it merges to main via a pull r
 - `app/api/answer/route.ts`: `POST { question }`. 400 for a rejected question, 200 otherwise.
 - `npm test`: 281 passed, 2 expected failures (C16, C22 known search misses). `npm run lint`, `npx tsc --noEmit` and `npm run build` pass.
 
-## What's next: Day 2b (only after both steps below)
-1. **Chinmay, in the Groq console:** set the "first-line" project's rate limits below the organisation limits, so FirstLine can never use up the shared 200,000 tokens/day that Career Co-pilot needs.
-2. **Chinmay:** approve the AI instruction text in `lib/prompt.ts` and the request body. Any change means a new fingerprint and a line in `docs/DECISIONS.md`.
-3. Then 3 real calls locally through `/api/answer`, for example C06 (answer), C35 (should be needs_human) and C39 (off-topic).
+## What's next: Day 3, the `/demo` widget (SPEC screen 2)
+- Day 2 is done: Groq project limits set and instructions approved (28 Nov), 8 real calls, 9/9 results matched, 0 wrong answers.
+- Build `/demo`: a fake Tallyfox help page with the FirstLine chat widget, which calls `POST /api/answer`.
+- Every answer shows its quote underneath, and "Did this solve it?" with Yes and No buttons (Yes = resolved; No = handover `customer_said_no`; no click = answered, unconfirmed).
+- Done when a full question → answer → Yes/No loop works in the browser.
+- The instructions and request body stay unchanged (fingerprint b6cbcebee5df9b5846fc85e02423ecdc0c46b42ae5e23b47f68e4a6f8fd0c2e0). Any change needs a new fingerprint and a line in `docs/DECISIONS.md`.
 
 ## Day 2b checks (results 2026-11-28)
 - **JSON schema response format:** not tried today; decide before the Day 5 calibration run. Keep the zod check either way.
@@ -50,3 +52,4 @@ Branch day2-answer-step is pushed but NOT merged; it merges to main via a pull r
 
 ## Later
 - Article keywords from real customer wording (vocabulary gap). Parked 2026-11-27: needs real search logs.
+- Handover summary for language_not_supported: show the AI's English summary plus the original question (when building the inbox).
