@@ -7,11 +7,12 @@
 Branch day2-answer-step is pushed but NOT merged; it merges to main via a pull request only after Day 2b passes and Chinmay says go.
 
 ## Where we stopped
-- **Date:** 2026-11-27
+- **Date:** 2026-11-28
 - **Branch:** `day2-answer-step` (from `main` at `3896635`, the merge of PR #1).
-- **Latest code commit:** `00c77a4` "day 2a.1: review fixes (whole-sentence quote, request fingerprint, narrower charge rule)". Then `085443b` "docs: day 2a.1 handoff" and "docs: end-of-day handoff (27 Nov)" (this note).
-- **Pushed:** `day2-answer-step` pushed to origin on 2026-11-27 and tracking `origin/day2-answer-step`. NOT merged. `main` was not pushed or changed (still `3896635`).
-- **Real AI calls made:** none. Every test uses a fake AI.
+- **Commits today:** `d3c8643` "chore: add Next.js AGENTS.md (written by next dev)", then "day 2b: first real calls (results in docs/runs)" (this note). Not pushed today: origin still has `77f3714`. NOT merged. `main` unchanged (`3896635`).
+- **Before the calls:** Chinmay set the Groq project limits and approved the instruction text and request body (both logged in `docs/DECISIONS.md`, 2026-11-28). Fingerprint unchanged.
+- **Real AI calls made:** 8 (budget 8): C06 through the real route (`npm run dev` + `POST /api/answer`), then C35, C39, C03, C23, C16, C22 and one German question through `scripts/try-real-calls.ts`. C29 made 0 calls (hard rule). All 9 results matched what was expected; 0 wrong answers. Full table: `docs/runs/2026-11-28-day2b.md`.
+- **How to run the script (no new packages):** `node --env-file=.env.local -e "import('vite').then(v => v.runnerImport('./scripts/try-real-calls.ts', { configFile: false }))"`. It makes up to 7 real calls and waits 35 s before each.
 
 ## What works
 - `lib/rules.ts`: the 6 hard rules, whole words and phrases, any letter case, word forms written out by hand. `billing_dispute` no longer fires on "charge twice" / "charges twice". C29–C34 each fire exactly their rule; the other 36 cases fire none.
@@ -28,10 +29,15 @@ Branch day2-answer-step is pushed but NOT merged; it merges to main via a pull r
 2. **Chinmay:** approve the AI instruction text in `lib/prompt.ts` and the request body. Any change means a new fingerprint and a line in `docs/DECISIONS.md`.
 3. Then 3 real calls locally through `/api/answer`, for example C06 (answer), C35 (should be needs_human) and C39 (off-topic).
 
-## Day 2b checks
-- Try a JSON schema response format (Career Co-pilot uses it on the same model). Keep the zod check either way.
-- Do `reasoning_effort` and `include_reasoning` work as expected, and is 500 tokens enough? Does Groq really report bad JSON as 400 `json_validate_failed`?
-- C16 and C22 should end as needs_human. C23 ("I forgot my password") must be answered from A21. C03 must be answered with A04's whole sentence.
+## Day 2b checks (results 2026-11-28)
+- **JSON schema response format:** not tried today; decide before the Day 5 calibration run. Keep the zod check either way.
+- **500 output tokens:** enough. The largest reply was 116 completion tokens, and finish_reason was "stop" every time (never "length").
+- **reasoning_effort / include_reasoning:** reasoning stayed small (4 to 54 tokens per call), and the reply text was only the JSON, with no reasoning mixed in. (We did not check whether Groq sends a separate reasoning field.)
+- **json_validate_failed:** never seen; every call returned HTTP 200 with valid JSON. Still unproven whether Groq reports bad JSON as 400 `json_validate_failed`.
+- **C16 and C22:** both handed over as `ai_unsure` (needs_human), as expected for the known search misses.
+- **C23:** answered from A21 with a whole A21 sentence. But the answer says the link is "sent to your email", which A21 doesn't say. Note for Day 5 hand scoring.
+- **C03:** answered from A04 with the whole sentence "PayPal is not accepted."
+- **Cost per question:** about 640 to 940 prompt tokens and 40 to 120 completion tokens per AI call. Each call took 0.4 to 0.9 s.
 
 ## Later days
 - **Day 3:** show the quote under every answer. Code checks only the quote, not the answer text.

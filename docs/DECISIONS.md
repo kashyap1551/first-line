@@ -20,3 +20,5 @@
 - 2026-11-27: "How do I record a refund for my client?" stays a billing_dispute handover (owner accepted).
 - 2026-11-27: The server logs only the error type and HTTP status of a failed AI call. Never the question, the AI reply or a key.
 - 2026-11-27: The help centre is built into the code at build time (Turbopack "?raw" text rule, no new package), so a deployment can't miss content/help-center.md.
+- 2026-11-28: AI instruction text (`lib/prompt.ts`) and request body (`lib/groq-request.ts`) approved by Chinmay. Fingerprint b6cbcebee5df9b5846fc85e02423ecdc0c46b42ae5e23b47f68e4a6f8fd0c2e0.
+- 2026-11-28: Groq "first-line" project: only `openai/gpt-oss-120b` is allowed. Project limits (project / organisation): 10 / 30 requests per minute, 300 / 1,000 requests per day, 4,000 / 8,000 tokens per minute, 100,000 / 200,000 tokens per day. Consequence: about 2 questions per minute; eval runs must pace their calls (Day 5).
