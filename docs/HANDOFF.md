@@ -1,22 +1,28 @@
 # Handoff
 
 ## Start here next session
-1. Read CLAUDE.md, then this file, then docs/DECISIONS.md.
-2. Day 2 (answer step) is done and merged (PR #2). Day 3 (`/demo` widget), Day 4 (`/team` inbox, `/team/billing`) and the Day 5 eval runner are built on branch `demo-widget`, committed, NOT pushed.
-3. Next: the calibration run, only after Chinmay's "go": `npm run eval -- --label calibration` (about 43 AI calls, about 43,000 tokens, about 15 minutes). Before the first counted run, Chinmay confirms how unsure cases count in the bars (see DECISIONS 2026-11-28).
+1. Read CLAUDE.md, this file, then docs/DECISIONS.md.
+2. Branch `demo-widget` holds the chat widget, team inbox, billing page and eval runner. Pushed, NOT merged.
+3. Next, in order:
+   a) DONE 28 Nov: the json_validate_failed change (DECISIONS 2026-11-28), built tests first in `7eb35b3`. A 400 json_validate_failed is scored as a handover `ai_invalid_output`; only unavailable (429, 5xx, timeout, network error) stops a run.
+   b) DONE 28 Nov, but INCOMPLETE: the calibration run (`npm run eval -- --label calibration`), practice, not counted. It stopped at C37 after an AI call timed out (15 s limit), no retry. Report committed in `3316d71`: `docs/evals/2026-11-28-calibration.md` and `.json`. Nothing was changed because of it; see "Calibration run 2026-11-28" below.
+   c) Chinmay pastes the calibration report into the reviewer chat for review. Any change it leads to (code, cases, prompt, or a second calibration run) needs his decision first.
+   d) Chinmay's manual browser test of `/demo`, `/team`, `/team/billing`: the MANUAL TEST LIST in `docs/manual-tests.md` (checks D and H–M from the chat test, plus steps 19–27 for the team pages). Results so far: A, B, C, E, F, G passed on 28 Nov.
+   e) After his go: pull request for `demo-widget` → `main`.
+   f) Counted runs `counted-1` and `counted-2`, on different days.
 
 ## Where we stopped
 - **Date:** 2026-11-28
 - **Branch:** `demo-widget` (from `main` at `64dde8b`, the merge of PR #2). `day2-answer-step` was deleted locally and on origin.
-- **Commits:** `74890d7` "demo widget: help page, chat, feedback, daily cap", `8b3318f` "team inbox and billing page", then "eval runner and hard cases" (this note). NOT pushed.
-- **Real AI calls on this branch:** none by Claude. The page checks fetched only `/`, `/demo`, `/team` and `/team/billing` (all 200); `/api/answer` was never called. The eval runner was tried only with a fake AI and with `AI_ENABLED=false` on the command line (it refused to start, 0 calls).
+- **Commits on the branch:** `74890d7` demo widget, `8b3318f` team inbox and billing page, `11f92af` eval runner and hard cases, `7eb35b3` eval: score json_validate_failed as a handover, `3316d71` eval: calibration run (practice, not counted), then "docs: end of session (28 Nov)" (this note). Pushed to origin on 2026-11-28 with Chinmay's go. NOT merged; `main` unchanged at `64dde8b`.
+- **Real AI calls today on this branch:** only the calibration run: 31 calls sent (30 answered with HTTP 200, 1 timed out at C37), 30,375 tokens recorded for the 30 that answered. The page checks fetched only `/`, `/demo`, `/team` and `/team/billing`; Claude never called `/api/answer`.
 - **Deliberate breaks done (all restored):**
   - Removing the `quote_not_found` demo note made "reason quote_not_found has a demo note" fail.
   - Letting setFeedback run twice made "works only once: a second click changes nothing" fail.
   - Counting unconfirmed answers in the FirstLine bill made the two FirstLine-bill tests (50 and 99 cents) fail.
   - Letting markDone run twice made "works only once: a second call changes nothing" fail.
   - Counting a citation outside accepted_ids as correct made "answer case: answered citing A04 and A12 (A12 not accepted)" fail.
-  - Letting the eval continue after a 429 made "stops after a 429: no retry, no further calls, report marked INCOMPLETE" fail (and the 400 stop test).
+  - Letting the eval continue after a 429 made "stops after a 429: no retry, no further calls, report marked INCOMPLETE" fail (checked again after the json_validate_failed change).
 
 ## What works
 - **Answer step (Day 2):**
@@ -41,13 +47,24 @@
   - `evals/cases.json`: core set C01–C42 (C18 and C35 unsure) plus the owner's hard cases C43–C50.
   - `lib/eval-score.ts`: the verdict per case, the leak check, and the core totals against the SPEC pass bars (unsure cases scored separately).
   - `lib/eval-report.ts`: the report (Markdown and JSON), the cost estimate and the one-counted-run-per-day check.
-  - `scripts/eval-runner.ts` (run, stop rules, writing, arguments), `scripts/eval.ts` (the real run) and `scripts/groq-observer.ts` (records status, finish_reason and tokens per call; never headers or keys).
+  - `scripts/eval-runner.ts` (run, stop rules: only unavailable or paused stops a run; writing; arguments), `scripts/eval.ts` (the real run) and `scripts/groq-observer.ts` (records status, finish_reason and tokens per call; never headers or keys).
   - `npm run eval -- --label calibration|counted-1|counted-2 [--cases file] [--out folder]`. Reports go to `docs/evals/<date>-<label>.md` and `.json`.
-- **Checks:** `npm test`: 468 passed, 2 expected failures (C16, C22 known search misses). `npm run lint`, `npx tsc --noEmit` and `npm run build` pass.
+- **Checks:** `npm test`: 471 passed, 2 expected failures (C16, C22 known search misses). `npm run lint`, `npx tsc --noEmit` and `npm run build` pass.
 
 ## What's next
-1. **Chinmay:** manual browser test of `/demo`, `/team` and `/team/billing` (real AI calls). Day 3 is done when a full question → answer → Yes/No loop works in the browser. Day 4 is done when the billing page matches a hand-counted 10-question session in the browser (the same session already passes as a unit test).
-2. **Day 5:** the calibration run after Chinmay's go (`npm run eval -- --label calibration`). Then Chinmay fills in the "Adds unsupported detail?" column by hand. Then 2 counted runs on different days (`counted-1`, `counted-2`) with the same fingerprint. A held-out file outside the repo can be used with `--cases`; use `--out` with a folder outside the repo too, so its questions never land in the repo.
+See "Start here next session", steps c) to f). Notes for them:
+- Day 3 is done when a full question → answer → Yes/No loop works in the browser. Day 4 is done when the billing page matches a hand-counted 10-question session in the browser (the same session already passes as a unit test).
+- Day 5: Chinmay fills in the "Adds unsupported detail?" column by hand. Counted runs need the same fingerprint. A held-out file outside the repo can be used with `--cases`; use `--out` with a folder outside the repo too, so its questions never land in the repo.
+
+## Calibration run 2026-11-28 (practice, not counted): to review
+- **Status:** INCOMPLETE, stopped at C37 ("My Tallyfox Pay payout still hasn't arrived after 5 days"): the AI call timed out at the 15 s limit. C38–C50 were not run.
+- **Core so far (pass bars not judged because incomplete):** wrong answers 0 of 40; answer cases correct 22 of 27 (bar at least 24); hard-rule cases handed over 6 of 6 (all 6 with exactly the expected rule); unneeded handovers 5 of 27 (bar at most 5); off-topic declined 0 of 4 (none reached).
+- **Unneeded handovers:** C01, C08 and C14 as `quote_not_found` (the AI's quote wasn't one whole sentence of a cited article); C16 and C22 as `ai_unsure` (the known search misses).
+- **Unsure cases:** C18 unneeded handover (`ai_unsure`), C35 correct.
+- **Noticed in the report, not changed:**
+  - The report counts 30 AI calls; 31 were sent. A timed-out call returns no reply, so the token counter doesn't see it.
+  - A `quote_not_found` handover keeps no record of which article and quote the AI gave, so the report can't show why C01, C08 and C14 failed.
+  - All answered cases still need Chinmay's hand score in the "Adds unsupported detail?" column. C23 again says the reset link is "sent to your email", which A21 doesn't say (same as Day 2b).
 
 ## Day 2b checks (results 2026-11-28)
 - **JSON schema response format:** decided 2026-11-28: keep json_object (see DECISIONS).
