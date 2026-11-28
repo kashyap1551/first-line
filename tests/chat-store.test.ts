@@ -6,6 +6,7 @@ import {
   capReached,
   createEventStore,
   eventFromResponse,
+  markDone,
   questionsLeft,
   questionsToday,
   setFeedback,
@@ -190,6 +191,45 @@ describe("setFeedback", () => {
   });
 });
 
+describe("markDone (the team handled a handover)", () => {
+  const handover: ChatEvent = {
+    id: "h1",
+    at: at(28, 10),
+    question: "I was charged twice this month, please refund me",
+    outcome: "handover",
+    reason: "billing_dispute",
+    summary: "I was charged twice this month, please refund me",
+    feedback: null,
+  };
+
+  it("marks a handover as done", () => {
+    const [e] = markDone([handover], "h1");
+    expect(e).toEqual({ ...handover, done: true });
+  });
+
+  it("also works on an answer the customer said No to", () => {
+    const [no] = setFeedback([answered()], "e1", "no");
+    expect(markDone([no], "e1")[0].done).toBe(true);
+  });
+
+  it("works only once: a second call changes nothing", () => {
+    const once = markDone([handover], "h1");
+    expect(markDone(once, "h1")).toBe(once);
+  });
+
+  it("is not allowed on anything that isn't a handover", () => {
+    const list = [answered(), declined("d1", 28, 9)];
+    expect(markDone(list, "e1")).toBe(list);
+    expect(markDone(list, "d1")).toBe(list);
+  });
+
+  it("changes nothing for an unknown id and leaves other events untouched", () => {
+    const list = [declined("d1", 28, 9), handover];
+    expect(markDone(list, "nope")).toBe(list);
+    expect(markDone(list, "h1")[0]).toBe(list[0]);
+  });
+});
+
 describe("questionsToday and the daily cap (local date)", () => {
   // Hand count for NOW = 28 Nov 15:00: 28 Nov 00:00, 12:00 and 23:59 are today (3).
   // 27 Nov 23:59 and 29 Nov 00:00 are not.
@@ -298,6 +338,21 @@ describe("createEventStore: browser storage, with memory as the fallback", () =>
       data.set(STORAGE_KEY, raw);
       expect(createEventStore(() => storage).load()).toEqual([]);
     }
+  });
+
+  it("old events without `done` still load, and done: true is kept", () => {
+    const { storage, data } = fakeStorage();
+    const old = answered("old"); // stored before `done` existed: no such field
+    const handled: ChatEvent = {
+      ...answered("h"),
+      outcome: "handover",
+      reason: "ai_unsure",
+      done: true,
+    };
+    data.set(STORAGE_KEY, JSON.stringify([old, handled]));
+    const loaded = createEventStore(() => storage).load();
+    expect(loaded).toEqual([old, handled]);
+    expect("done" in loaded[0]).toBe(false);
   });
 
   it("keeps the valid events and drops invalid ones", () => {

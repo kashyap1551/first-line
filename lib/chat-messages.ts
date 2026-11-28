@@ -75,7 +75,7 @@ const REASON_NOTES: Record<Reason, string> = {
 
 const OUTCOME_NOTES: Record<Outcome, string> = {
   answered:
-    "Answered from the help articles. Code checked that the quote is a whole sentence of the cited article. Billed only if you click Yes.",
+    "Answered from the help articles. Code checked that the quote is a whole sentence of the cited article. Tallyfox is billed only if the customer clicks Yes.",
   handover: "Handed over to a person.",
   declined: "Off-topic: not about Tallyfox, so the AI declined. Not billed.",
   unavailable:

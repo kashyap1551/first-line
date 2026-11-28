@@ -43,6 +43,8 @@ export type ChatEvent = {
   quote?: string;
   summary?: string;
   feedback: Feedback;
+  /** The team marked this handover as handled. Missing on older records. */
+  done?: boolean;
 };
 
 const OUTCOMES = [
@@ -84,6 +86,7 @@ const StoredEventSchema = z.object({
   quote: z.string().optional(),
   summary: z.string().optional(),
   feedback: z.union([z.null(), z.literal("yes"), z.literal("no")]),
+  done: z.boolean().optional(),
 });
 
 /** Turns the reply body from /api/answer into a record. Unknown replies become "unavailable". */
@@ -141,6 +144,23 @@ export function setFeedback(
           feedback: "no",
         };
   return events.map((e) => (e === target ? updated : e));
+}
+
+/** The team marks a handover as handled: only on a handover, only once. Otherwise the same list comes back. */
+export function markDone(events: ChatEvent[], id: string): ChatEvent[] {
+  const target = events.find((e) => e.id === id);
+  if (!target || target.outcome !== "handover" || target.done === true) {
+    return events;
+  }
+  return events.map((e) => (e === target ? { ...target, done: true } : e));
+}
+
+/** Newest first; for the same time, the one recorded later comes first. */
+export function newestFirst(events: ChatEvent[]): ChatEvent[] {
+  return events
+    .map((event, index) => ({ event, index }))
+    .sort((a, b) => b.event.at.localeCompare(a.event.at) || b.index - a.index)
+    .map(({ event }) => event);
 }
 
 const sameLocalDay = (a: Date, b: Date) =>

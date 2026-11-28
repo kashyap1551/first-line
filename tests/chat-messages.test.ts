@@ -169,6 +169,12 @@ describe("demo notes: every reason and outcome has one", () => {
     expect(new Set(notes).size).toBe(ALL_REASONS.length);
   });
 
+  it("the answered note, exactly as approved", () => {
+    expect(demoNote("answered")).toBe(
+      "Answered from the help articles. Code checked that the quote is a whole sentence of the cited article. Tallyfox is billed only if the customer clicks Yes.",
+    );
+  });
+
   it("every reply carries its note", () => {
     expect(replyFor(handover("quote_not_found"), TITLES).note).toBe(
       demoNote("handover", "quote_not_found"),

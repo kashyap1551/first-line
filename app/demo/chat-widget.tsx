@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import {
   CAP_REACHED,
   UI,
@@ -11,35 +11,16 @@ import {
   type BotReply,
 } from "@/lib/chat-messages";
 import {
-  STORAGE_KEY,
   addEvent,
   capReached,
-  createEventStore,
   eventFromResponse,
   questionsLeft,
   setFeedback,
   type ChatEvent,
 } from "@/lib/chat-store";
+import { store, useEvents } from "../components/use-events";
 
 // The decisions and wording live in lib/ (tested). This file only draws them.
-
-const store = createEventStore(() => window.localStorage);
-
-function subscribe(onChange: () => void) {
-  const unsubscribe = store.subscribe(onChange);
-  const onStorage = (e: StorageEvent) => {
-    if (e.key === STORAGE_KEY || e.key === null) store.reload();
-  };
-  window.addEventListener("storage", onStorage);
-  return () => {
-    unsubscribe();
-    window.removeEventListener("storage", onStorage);
-  };
-}
-
-// null while the page is drawn on the server: browser storage isn't there yet.
-const useEvents = () =>
-  useSyncExternalStore(subscribe, store.load, () => null);
 
 // crypto.randomUUID only exists on https and localhost.
 const newId = () =>

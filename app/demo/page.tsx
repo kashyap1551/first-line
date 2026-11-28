@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { articles } from "@/lib/help-centre";
 import { groupByCategory, titlesById } from "@/lib/help-page";
+import { SiteNav } from "../components/site-nav";
 import { ChatWidget } from "./chat-widget";
 
 export const metadata: Metadata = {
@@ -12,15 +12,13 @@ export const metadata: Metadata = {
 export default function DemoPage() {
   return (
     <div className="min-h-screen bg-zinc-50 text-zinc-900">
+      <SiteNav current="/demo" />
       <header className="border-b border-zinc-200 bg-white">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-3 px-4 py-4">
           <h1 className="text-xl font-semibold">Tallyfox Help Centre</h1>
           <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-900">
             Fictional company: demo for FirstLine
           </span>
-          <Link href="/" className="ml-auto text-sm text-indigo-700 underline underline-offset-2">
-            About FirstLine
-          </Link>
         </div>
       </header>
 

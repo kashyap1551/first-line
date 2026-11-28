@@ -2,15 +2,19 @@
 
 ## Start here next session
 1. Read CLAUDE.md, then this file, then docs/DECISIONS.md.
-2. Day 2 (answer step) is done and merged (PR #2). Day 3 (`/demo` widget) is built on branch `demo-widget`, committed, NOT pushed.
-3. Next: Chinmay's manual browser test of `/demo` with real AI calls (his own list). Then, after his go, push `demo-widget` and open a pull request. Then Day 4: `/team` inbox and `/team/billing`.
+2. Day 2 (answer step) is done and merged (PR #2). Day 3 (`/demo` widget) and Day 4 (`/team` inbox, `/team/billing`) are built on branch `demo-widget`, committed, NOT pushed.
+3. Next: Chinmay's manual browser test of `/demo`, `/team` and `/team/billing` (his list, with real AI calls). Then, after his go, push `demo-widget` and open a pull request. Then Day 5: `npm run eval` and `docs/EVALS.md`.
 
 ## Where we stopped
 - **Date:** 2026-11-28
 - **Branch:** `demo-widget` (from `main` at `64dde8b`, the merge of PR #2). `day2-answer-step` was deleted locally and on origin.
-- **Commit:** "demo widget: help page, chat, feedback, daily cap" (this note). NOT pushed.
-- **Real AI calls today on this branch:** none by Claude. The dev check fetched only `/` and `/demo` (both 200); `/api/answer` was never called.
-- **Deliberate breaks done:** removing the `quote_not_found` demo note made "reason quote_not_found has a demo note" fail; letting setFeedback run twice made "works only once: a second click changes nothing" fail. Both restored.
+- **Commits:** `74890d7` "demo widget: help page, chat, feedback, daily cap", then "team inbox and billing page" (this note). NOT pushed.
+- **Real AI calls on this branch:** none by Claude. The page checks fetched only `/`, `/demo`, `/team` and `/team/billing` (all 200); `/api/answer` was never called.
+- **Deliberate breaks done (all restored):**
+  - Removing the `quote_not_found` demo note made "reason quote_not_found has a demo note" fail.
+  - Letting setFeedback run twice made "works only once: a second click changes nothing" fail.
+  - Counting unconfirmed answers in the FirstLine bill made the two FirstLine-bill tests (50 and 99 cents) fail.
+  - Letting markDone run twice made "works only once: a second call changes nothing" fail.
 
 ## What works
 - **Answer step (Day 2):**
@@ -26,11 +30,16 @@
   - `lib/help-page.ts`: articles grouped by category (8 categories) and the id → title map.
   - `app/demo/page.tsx` + `app/demo/chat-widget.tsx`: the Tallyfox help page (25 expandable articles with id anchors) and the chat widget, open by default (right on wide screens, on top and full width on phones).
   - `app/page.tsx`: the FirstLine landing page with "Try the demo".
-- **Checks:** `npm test`: 367 passed, 2 expected failures (C16, C22 known search misses). `npm run lint`, `npx tsc --noEmit` and `npm run build` pass.
+- **Team pages (Day 4):**
+  - `lib/chat-store.ts`: also markDone (handover only, once) and the optional `done` flag; older records still load.
+  - `lib/billing.ts`: this month's counts (billable, not counted, resolved, unconfirmed, handed over with a breakdown by reason, off-topic), the resolution rate, both bills in whole cents, the unverified amount and share, the unverified list, and the billing-page wording. Tested with Chinmay's hand-counted 10-question session.
+  - `lib/team-inbox.ts`: handovers newest first, split into open and done, and the team's wording for every reason.
+  - `app/team/page.tsx` (inbox) and `app/team/billing/page.tsx` (billing). `app/components/use-events.ts` is the one shared reader of the browser record; `app/components/site-nav.tsx` is the nav (Customer view · Team inbox · Billing).
+- **Checks:** `npm test`: 419 passed, 2 expected failures (C16, C22 known search misses). `npm run lint`, `npx tsc --noEmit` and `npm run build` pass.
 
 ## What's next
-1. **Chinmay:** manual browser test of `/demo` (real AI calls). Day 3 is done when a full question → answer → Yes/No loop works in the browser.
-2. **Day 4:** `/team` inbox (handovers with question, reason, summary, "Mark done") and `/team/billing` (resolved, unconfirmed, handed over, off-topic, the bill, the billing-rule switch). Both read the same browser record (`lib/chat-store.ts`). Done when counts match a hand-counted 10-question session.
+1. **Chinmay:** manual browser test of `/demo`, `/team` and `/team/billing` (real AI calls). Day 3 is done when a full question → answer → Yes/No loop works in the browser. Day 4 is done when the billing page matches a hand-counted 10-question session in the browser (the same session already passes as a unit test).
+2. **Day 5:** `npm run eval` and `docs/EVALS.md`: 1 calibration run, then 2 counted runs on different days. Pace the calls (about 36 AI calls, about 36,000 tokens per run). Decide on the JSON schema response format before the calibration run.
 
 ## Day 2b checks (results 2026-11-28)
 - **JSON schema response format:** not tried today; decide before the Day 5 calibration run. Keep the zod check either way.
