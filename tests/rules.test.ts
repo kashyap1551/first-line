@@ -9,9 +9,13 @@ type Case = {
   rule: HardRule | null;
 };
 
-const cases: Case[] = JSON.parse(
+const allCases: Case[] = JSON.parse(
   readFileSync(new URL("../evals/cases.json", import.meta.url), "utf8"),
 ).cases;
+// The core set C01–C42. The hard cases C43–C50 are tested separately below.
+const isCore = (c: Case) => Number(c.id.slice(1)) <= 42;
+const cases = allCases.filter(isCore);
+const hardCases = allCases.filter((c) => !isCore(c));
 
 const ruleCases = cases.filter((c) => c.rule !== null);
 const answerCases = cases.filter((c) => c.expected === "answer");
@@ -21,6 +25,10 @@ const aiHandoverCases = cases.filter(
 );
 
 describe("hard rules on evals/cases.json", () => {
+  it("the core set is exactly C01–C42", () => {
+    expect(cases.map((c) => c.id)).toEqual(Array.from({ length: 42 }, (_, i) => `C${String(i + 1).padStart(2, "0")}`));
+  });
+
   it("covers 6 rule cases (C29–C34), 28 answer, 4 decline and 4 AI handover cases", () => {
     expect(ruleCases.map((c) => c.id)).toEqual([
       "C29",
@@ -47,6 +55,24 @@ describe("hard rules on evals/cases.json", () => {
       expect(matchRule(question)).toBeNull();
     },
   );
+});
+
+describe("hard cases C43–C50 (owner-authored, 2026-11-28)", () => {
+  it("are exactly C43–C50", () => {
+    expect(hardCases.map((c) => c.id)).toEqual([
+      "C43", "C44", "C45", "C46", "C47", "C48", "C49", "C50",
+    ]);
+  });
+
+  it("C50 'How do I record a refund for my client?' is billing_dispute", () => {
+    const c50 = hardCases.find((c) => c.id === "C50")!;
+    expect(matchingRules(c50.question)).toEqual(["billing_dispute"]);
+    expect(c50.rule).toBe("billing_dispute");
+  });
+
+  it.each(hardCases.filter((c) => c.id !== "C50"))("$id triggers no rule", ({ question }) => {
+    expect(matchingRules(question)).toEqual([]);
+  });
 });
 
 describe("added cases", () => {

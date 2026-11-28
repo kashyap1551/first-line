@@ -95,7 +95,10 @@ describe("answer cases from evals/cases.json", () => {
     accepted_ids: string[];
   };
   const articles = parseArticles(read("../content/help-center.md"));
-  const cases: Case[] = JSON.parse(read("../evals/cases.json")).cases;
+  // Core set C01–C42 only. C44 and C45 are reported by the eval, not tuned for.
+  const cases: Case[] = JSON.parse(read("../evals/cases.json")).cases.filter(
+    (c: Case) => Number(c.id.slice(1)) <= 42,
+  );
   const answerCases = cases.filter((c) => c.expected === "answer");
 
   // Accepted on 2026-11-27 (see docs/DECISIONS.md). it.fails keeps them visible
